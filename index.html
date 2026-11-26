@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NETRA | Robot Mission Control</title>
+  <style>
+    :root {
+      --bg-main: #09101d;
+      --bg-nav: #0d172a;
+      --bg-card: #111e36;
+      --border: #1e2f50;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text-main: #f1f5f9;
+      --text-muted: #8b9bb4;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; }
+
+    /* Top Navbar */
+    header {
+      background: var(--bg-nav);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.65rem; }
+    .logo-box {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 1.1rem; color: #fff;
+    }
+    .brand-title { font-weight: 800; font-size: 1.15rem; letter-spacing: 1px; color: #3b82f6; }
+    .brand-sub { font-size: 0.62rem; letter-spacing: 1.2px; color: var(--text-muted); text-transform: uppercase; }
+
+    nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    nav button {
+      background: transparent; border: none; color: var(--text-muted);
+      padding: 0.45rem 0.75rem; border-radius: 6px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 500; transition: 0.2s;
+    }
+    nav button:hover, nav button.active { background: rgba(59,130,246,0.15); color: #fff; }
+
+    .header-right { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+    .status-pill { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 700; color: var(--green); letter-spacing: 0.5px; }
+    .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
+    .clock { font-family: monospace; font-size: 0.85rem; color: var(--text-main); }
+
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      padding: 0.5rem 0.9rem; border-radius: 6px; font-weight: 600;
+      font-size: 0.82rem; cursor: pointer; transition: 0.2s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    /* Main Container */
+    main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.25rem; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* KPI Grid */
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.1rem;
+    }
+    .card-label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+    .card-val { font-size: 1.75rem; font-weight: 700; margin-top: 0.35rem; }
+
+    /* Table / List */
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+    .badge { padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .b-active { background: rgba(16,185,129,0.15); color: var(--green); }
+    .b-idle { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .b-alert { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: none; place-items: center; padding: 1rem; z-index: 50;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal {
+      background: var(--bg-nav); border: 1px solid var(--border);
+      border-radius: 10px; width: 100%; max-width: 420px; padding: 1.4rem;
+    }
+    .modal h3 { margin-bottom: 1rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+    .field input, .field select {
+      width: 100%; padding: 0.55rem; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--bg-main); color: #fff;
+    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1rem; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 0.5rem 0.9rem; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo-box">N</div>
+      <div>
+        <div class="brand-title">NETRA</div>
+        <div class="brand-sub">Robot Mission Control</div>
+      </div>
+    </div>
+
+    <nav>
+      <button class="active" onclick="showTab('dashboard', this)">Dashboard</button>
+      <button onclick="showTab('fleet', this)">Fleet</button>
+      <button onclick="showTab('telemetry', this)">Telemetry</button>
+      <button onclick="showTab('alerts', this)">Alerts</button>
+    </nav>
+
+    <div class="header-right">
+      <div class="status-pill"><span class="dot"></span> SYSTEM ONLINE</div>
+      <div class="clock" id="clock">00:00:00</div>
+      <button class="btn-primary" onclick="toggleModal(true)">+ Dispatch Mission</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="section active">
+      <div class="grid-4">
+        <div class="card"><div class="card-label">Active Units</div><div class="card-val" id="kpi-units">4 / 5</div></div>
+        <div class="card"><div class="card-label">Active Missions</div><div class="card-val" id="kpi-missions">3</div></div>
+        <div class="card"><div class="card-label">Avg Battery</div><div class="card-val">84%</div></div>
+        <div class="card"><div class="card-label">Network Latency</div><div class="card-val">18 ms</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Mission Queue</h3>
+        <table>
+          <thead><tr><th>Mission ID</th><th>Unit</th><th>Objective</th><th>Status</th></tr></thead>
+          <tbody id="mission-table">
+            <tr><td>#MSN-101</td><td>NETRA-01</td><td>Perimeter Recon — Sector A</td><td><span class="badge b-active">In Progress</span></td></tr>
+            <tr><td>#MSN-102</td><td>NETRA-03</td><td>Payload Delivery — Bay 4</td><td><span class="badge b-active">In Progress</span></td></tr>
+            <tr><td>#MSN-103</td><td>NETRA-04</td><td>Thermal Scan — North Grid</td><td><span class="badge b-idle">Queued</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FLEET -->
+    <section id="fleet" class="section">
+      <div class="card">
+        <h3>Robot Fleet Status</h3>
+        <table>
+          <thead><tr><th>Unit ID</th><th>Model</th><th>Battery</th><th>Location</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td>NETRA-01</td><td>Scout Rover</td><td>91%</td><td>Sector A (28.61°N, 77.20°E)</td><td><span class="badge b-active">Online</span></td></tr>
+            <tr><td>NETRA-02</td><td>Heavy Lifter</td><td>42%</td><td>Charging Dock 1</td><td><span class="badge b-idle">Charging</span></td></tr>
+            <tr><td>NETRA-03</td><td>Scout Rover</td><td>87%</td><td>Bay 4</td><td><span class="badge b-active">Online</span></td></tr>
+            <tr><td>NETRA-04</td><td>Aerial Drone</td><td>95%</td><td>Helipad B</td><td><span class="badge b-active">Standby</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TELEMETRY -->
+    <section id="telemetry" class="section">
+      <div class="grid-4">
+        <div class="card"><div class="card-label">CPU Load</div><div class="card-val" id="tel-cpu">34%</div></div>
+        <div class="card"><div class="card-label">LiDAR Rate</div><div class="card-val">20 Hz</div></div>
+        <div class="card"><div class="card-label">Core Temp</div><div class="card-val" id="tel-temp">46°C</div></div>
+        <div class="card"><div class="card-label">Uplink Signal</div><div class="card-val">-58 dBm</div></div>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="alerts" class="section">
+      <div class="card">
+        <h3>System Alerts</h3>
+        <table>
+          <thead><tr><th>Time</th><th>Unit</th><th>Message</th><th>Severity</th></tr></thead>
+          <tbody>
+            <tr><td>19:14:22</td><td>NETRA-02</td><td>Battery dropped below 45% — auto-docked</td><td><span class="badge b-idle">Warning</span></td></tr>
+            <tr><td>18:50:05</td><td>NETRA-05</td><td>Telemetry heartbeat timeout</td><td><span class="badge b-alert">Critical</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- DISPATCH MODAL -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h3>Dispatch New Mission</h3>
+      <div class="field">
+        <label>Assign Unit</label>
+        <select id="m-unit">
+          <option>NETRA-01</option>
+          <option>NETRA-03</option>
+          <option>NETRA-04</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mission Objective</label>
+        <input type="text" id="m-obj" placeholder="e.g., Inspect Substation B" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="toggleModal(false)">Cancel</button>
+        <button class="btn-primary" onclick="dispatchMission()">Launch</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Live Clock
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0];
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Tab Navigation
+    function showTab(id, btn) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // Modal & Dispatch
+    let missionCount = 103;
+    function toggleModal(open) {
+      document.getElementById('modal').classList.toggle('open', open);
+    }
+
+    function dispatchMission() {
+      const unit = document.getElementById('m-unit').value;
+      const obj = document.getElementById('m-obj').value.trim();
+      if (!obj) return;
+
+      missionCount++;
+      const row = `<tr><td>#MSN-${missionCount}</td><td>${unit}</td><td>${obj}</td><td><span class="badge b-active">In Progress</span></td></tr>`;
+      document.getElementById('mission-table').insertAdjacentHTML('afterbegin', row);
+      document.getElementById('kpi-missions').textContent = document.querySelectorAll('#mission-table tr').length;
+      document.getElementById('m-obj').value = '';
+      toggleModal(false);
+    }
+
+    // Simulated live telemetry jitter
+    setInterval(() => {
+      document.getElementById('tel-cpu').textContent = (28 + Math.floor(Math.random() * 14)) + '%';
+      document.getElementById('tel-temp').textContent = (44 + Math.floor(Math.random() * 5)) + '°C';
+    }, 2500);
+  </script>
+</body>
+</html>
